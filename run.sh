@@ -75,6 +75,9 @@ v2ray_client_config="/etc/v2ray/233blog_v2ray_config.json"
 backup="/etc/v2ray/233blog_v2ray_backup.conf"
 _v2ray_sh="/usr/local/sbin/v2ray"
 systemd=true
+v2ray_transport=1
+v2ray_port=80
+
 # _test=true
 
 transport=(
@@ -1016,7 +1019,7 @@ install() {
 		echo
 		exit 1
 	fi
-	v2ray_config
+	#v2ray_config
 	#blocked_hosts
 	#shadowsocks_config
 	install_info
