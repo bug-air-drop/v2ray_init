@@ -74,9 +74,6 @@ v2ray_server_config="/etc/v2ray/config.json"
 v2ray_client_config="/etc/v2ray/233blog_v2ray_config.json"
 backup="/etc/v2ray/233blog_v2ray_backup.conf"
 _v2ray_sh="/usr/local/sbin/v2ray"
-v2ray_transport=1
-v2ray_port=80
-
 systemd=true
 # _test=true
 
@@ -155,7 +152,7 @@ _sys_time() {
 	echo -e "${none}"
 	[[ $IS_OPENV ]] && pause
 }
-
+v2ray_config() {
 	# clear
 	echo
 	while :; do
@@ -175,8 +172,9 @@ _sys_time() {
 		echo "备注1: 含有 [dynamicPort] 的即启用动态端口.."
 		echo "备注2: [utp | srtp | wechat-video | dtls | wireguard] 分别伪装成 [BT下载 | 视频通话 | 微信视频通话 | DTLS 1.2 数据包 | WireGuard 数据包]"
 		echo
-		read -p "$(echo -e "(默认协议: ${cyan}TCP$none)"):" v2ray_transport
-		[ -z "$v2ray_transport" ] && v2ray_transport=1
+		#read -p "$(echo -e "(默认协议: ${cyan}TCP$none)"):" v2ray_transport
+		#[ -z "$v2ray_transport" ] && v2ray_transport=1
+		v2ray_transport=1
 		case $v2ray_transport in
 		[1-9] | [1-2][0-9] | 3[0-2])
 			echo
@@ -193,6 +191,113 @@ _sys_time() {
 	done
 	v2ray_port_config
 }
+v2ray_port_config() {
+	case $v2ray_transport in
+	4 | 5)
+		tls_config
+		;;
+	*)
+		local random=$(shuf -i20001-65535 -n1)
+		while :; do
+			echo -e "请输入 "$yellow"V2Ray"$none" 端口 ["$magenta"1-65535"$none"]"
+			#read -p "$(echo -e "(默认端口: ${cyan}${random}$none):")" v2ray_port
+			#[ -z "$v2ray_port" ] && v2ray_port=$random
+			v2ray_port=80
+			case $v2ray_port in
+			[1-9] | [1-9][0-9] | [1-9][0-9][0-9] | [1-9][0-9][0-9][0-9] | [1-5][0-9][0-9][0-9][0-9] | 6[0-4][0-9][0-9][0-9] | 65[0-4][0-9][0-9] | 655[0-3][0-5])
+				echo
+				echo
+				echo -e "$yellow V2Ray 端口 = $cyan$v2ray_port$none"
+				echo "----------------------------------------------------------------"
+				echo
+				break
+				;;
+			*)
+				error
+				;;
+			esac
+		done
+		if [[ $v2ray_transport -ge 18 ]]; then
+			v2ray_dynamic_port_start
+		fi
+		;;
+	esac
+}
+
+v2ray_dynamic_port_start() {
+
+	while :; do
+		echo -e "请输入 "$yellow"V2Ray 动态端口开始 "$none"范围 ["$magenta"1-65535"$none"]"
+		read -p "$(echo -e "(默认开始端口: ${cyan}10000$none):")" v2ray_dynamic_port_start_input
+		[ -z $v2ray_dynamic_port_start_input ] && v2ray_dynamic_port_start_input=10000
+		case $v2ray_dynamic_port_start_input in
+		$v2ray_port)
+			echo
+			echo " 不能和 V2Ray 端口一毛一样...."
+			echo
+			echo -e " 当前 V2Ray 端口：${cyan}$v2ray_port${none}"
+			error
+			;;
+		[1-9] | [1-9][0-9] | [1-9][0-9][0-9] | [1-9][0-9][0-9][0-9] | [1-5][0-9][0-9][0-9][0-9] | 6[0-4][0-9][0-9][0-9] | 65[0-4][0-9][0-9] | 655[0-3][0-5])
+			echo
+			echo
+			echo -e "$yellow V2Ray 动态端口开始 = $cyan$v2ray_dynamic_port_start_input$none"
+			echo "----------------------------------------------------------------"
+			echo
+			break
+			;;
+		*)
+			error
+			;;
+		esac
+
+	done
+
+	if [[ $v2ray_dynamic_port_start_input -lt $v2ray_port ]]; then
+		lt_v2ray_port=true
+	fi
+
+	v2ray_dynamic_port_end
+}
+v2ray_dynamic_port_end() {
+
+	while :; do
+		echo -e "请输入 "$yellow"V2Ray 动态端口结束 "$none"范围 ["$magenta"1-65535"$none"]"
+		read -p "$(echo -e "(默认结束端口: ${cyan}20000$none):")" v2ray_dynamic_port_end_input
+		[ -z $v2ray_dynamic_port_end_input ] && v2ray_dynamic_port_end_input=20000
+		case $v2ray_dynamic_port_end_input in
+		[1-9] | [1-9][0-9] | [1-9][0-9][0-9] | [1-9][0-9][0-9][0-9] | [1-5][0-9][0-9][0-9][0-9] | 6[0-4][0-9][0-9][0-9] | 65[0-4][0-9][0-9] | 655[0-3][0-5])
+
+			if [[ $v2ray_dynamic_port_end_input -le $v2ray_dynamic_port_start_input ]]; then
+				echo
+				echo " 不能小于或等于 V2Ray 动态端口开始范围"
+				echo
+				echo -e " 当前 V2Ray 动态端口开始：${cyan}$v2ray_dynamic_port_start_input${none}"
+				error
+			elif [ $lt_v2ray_port ] && [[ ${v2ray_dynamic_port_end_input} -ge $v2ray_port ]]; then
+				echo
+				echo " V2Ray 动态端口结束范围 不能包括 V2Ray 端口..."
+				echo
+				echo -e " 当前 V2Ray 端口：${cyan}$v2ray_port${none}"
+				error
+			else
+				echo
+				echo
+				echo -e "$yellow V2Ray 动态端口结束 = $cyan$v2ray_dynamic_port_end_input$none"
+				echo "----------------------------------------------------------------"
+				echo
+				break
+			fi
+			;;
+		*)
+			error
+			;;
+		esac
+
+	done
+
+}
+
 tls_config() {
 
 	echo
@@ -911,7 +1016,7 @@ install() {
 		echo
 		exit 1
 	fi
-	#v2ray_config
+	v2ray_config
 	#blocked_hosts
 	#shadowsocks_config
 	install_info
@@ -935,6 +1040,31 @@ install() {
 	get_ip
 	config
 	show_config_info
+}
+uninstall() {
+
+	if [[ -f /usr/bin/v2ray/v2ray && -f /etc/v2ray/config.json ]] && [[ -f $backup && -d /etc/v2ray/233boy/v2ray ]]; then
+		. $backup
+		if [[ $mark ]]; then
+			_load uninstall.sh
+		else
+			echo
+			echo -e " $yellow输入 ${cyan}v2ray uninstall${none} $yellow即可卸载${none}"
+			echo
+		fi
+
+	elif [[ -f /usr/bin/v2ray/v2ray && -f /etc/v2ray/config.json ]] && [[ -f /etc/v2ray/233blog_v2ray_backup.txt && -d /etc/v2ray/233boy/v2ray ]]; then
+		echo
+		echo -e " $yellow输入 ${cyan}v2ray uninstall${none} $yellow即可卸载${none}"
+		echo
+	else
+		echo -e "
+		$red 大胸弟...你貌似毛有安装 V2Ray ....卸载个鸡鸡哦...$none
+
+		备注...仅支持卸载使用我 (233v2.com) 提供的 V2Ray 一键安装脚本
+		" && exit 1
+	fi
+
 }
 
 args=$1
@@ -979,6 +1109,7 @@ while :; do
 		echo -e "$yellow 温馨提示.. 本地安装已启用 ..$none"
 		echo
 	fi
+	read -p "$(echo -e "请选择 [${magenta}1-2$none]:")" choose
 	case 1 in
 	1)
 		install
