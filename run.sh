@@ -676,7 +676,12 @@ shadowsocks_ciphers_config() {
 		esac
 
 	done
-	pause
+	
+	
+	
+	
+	
+	
 }
 
 install_info() {
@@ -982,6 +987,7 @@ error() {
 }
 
 pause() {
+	echo
 }
 do_service() {
 	if [[ $systemd ]]; then
