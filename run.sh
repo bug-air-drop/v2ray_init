@@ -981,14 +981,13 @@ get_ip() {
 }
 
 error() {
-
 	echo -e "\n$red 输入错误！$none\n"
-
 }
 
 pause() {
 	echo
 }
+
 do_service() {
 	if [[ $systemd ]]; then
 		systemctl $1 $2
