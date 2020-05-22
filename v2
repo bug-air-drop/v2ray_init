@@ -75,9 +75,6 @@ v2ray_client_config="/etc/v2ray/233blog_v2ray_config.json"
 backup="/etc/v2ray/233blog_v2ray_backup.conf"
 _v2ray_sh="/usr/local/sbin/v2ray"
 systemd=true
-v2ray_transport=1
-v2ray_port=80
-
 # _test=true
 
 transport=(
@@ -175,9 +172,8 @@ v2ray_config() {
 		echo "备注1: 含有 [dynamicPort] 的即启用动态端口.."
 		echo "备注2: [utp | srtp | wechat-video | dtls | wireguard] 分别伪装成 [BT下载 | 视频通话 | 微信视频通话 | DTLS 1.2 数据包 | WireGuard 数据包]"
 		echo
-		#read -p "$(echo -e "(默认协议: ${cyan}TCP$none)"):" v2ray_transport
-		#[ -z "$v2ray_transport" ] && v2ray_transport=1
-		v2ray_transport=1
+		read -p "$(echo -e "(默认协议: ${cyan}TCP$none)"):" v2ray_transport
+		[ -z "$v2ray_transport" ] && v2ray_transport=1
 		case $v2ray_transport in
 		[1-9] | [1-2][0-9] | 3[0-2])
 			echo
@@ -205,7 +201,6 @@ v2ray_port_config() {
 			echo -e "请输入 "$yellow"V2Ray"$none" 端口 ["$magenta"1-65535"$none"]"
 			read -p "$(echo -e "(默认端口: ${cyan}${random}$none):")" v2ray_port
 			[ -z "$v2ray_port" ] && v2ray_port=$random
-			v2ray_port=80
 			case $v2ray_port in
 			[1-9] | [1-9][0-9] | [1-9][0-9][0-9] | [1-9][0-9][0-9][0-9] | [1-5][0-9][0-9][0-9][0-9] | 6[0-4][0-9][0-9][0-9] | 65[0-4][0-9][0-9] | 655[0-3][0-5])
 				echo
@@ -676,12 +671,7 @@ shadowsocks_ciphers_config() {
 		esac
 
 	done
-	
-	
-	
-	
-	
-	
+	pause
 }
 
 install_info() {
@@ -744,6 +734,7 @@ install_info() {
 	echo
 	echo "---------- END -------------"
 	echo
+	pause
 	echo
 }
 
@@ -981,13 +972,16 @@ get_ip() {
 }
 
 error() {
+
 	echo -e "\n$red 输入错误！$none\n"
+
 }
 
 pause() {
+
+	read -rsp "$(echo -e "按$green Enter 回车键 $none继续....或按$red Ctrl + C $none取消.")" -d $'\n'
 	echo
 }
-
 do_service() {
 	if [[ $systemd ]]; then
 		systemctl $1 $2
@@ -1020,8 +1014,7 @@ install() {
 		echo
 		exit 1
 	fi
-	#v2ray_config
-	v2ray_port_config
+	v2ray_config
 	#blocked_hosts
 	#shadowsocks_config
 	install_info
@@ -1114,8 +1107,8 @@ while :; do
 		echo -e "$yellow 温馨提示.. 本地安装已启用 ..$none"
 		echo
 	fi
-	#read -p "$(echo -e "请选择 [${magenta}1-2$none]:")" choose
-	case 1 in
+	read -p "$(echo -e "请选择 [${magenta}1-2$none]:")" choose
+	case $choose in
 	1)
 		install
 		break
